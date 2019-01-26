@@ -6,12 +6,13 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    SafeAreaView
+    SafeAreaView,
+    ActivityIndicator
 } from "react-native";
 import styles from "./styles";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
-import * as FavoriteActions from "~/store/actions/favorites";
+import { Creators as FavoriteActions } from "~/store/ducks/favorites";
 
 //Alterada a cor da StatusBar para o IOS
 //Usada a SafeAreaView devido a um problema no iphone x do texto do foote nao ficar ok
@@ -30,7 +31,11 @@ class Main extends Component {
             navigate: PropTypes.func
         }).isRequired,
         addFavoriteRequest: PropTypes.func.isRequired,
-        favoritesCount: PropTypes.number.isRequired
+        favorites: PropTypes.shape({
+            data: PropTypes.arrayOf(PropTypes.shape),
+            errorOnAdd: PropTypes.oneOfType([null, PropTypes.string]),
+            loading: PropTypes.bool
+        }).isRequired
     };
 
     navigateToFavorites = () => {
@@ -54,6 +59,12 @@ class Main extends Component {
                     </Text>
 
                     <View style={styles.form}>
+                        {!!this.props.favorites.errorOnAdd && (
+                            <Text style={styles.error}>
+                                {this.props.favorites.errorOnAdd}
+                            </Text>
+                        )}
+
                         <TextInput
                             style={styles.input}
                             autoCapitalize="none"
@@ -71,16 +82,23 @@ class Main extends Component {
                             onPress={this.addRepository}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.buttonText}>
-                                Adicionar aos favoritos
-                            </Text>
+                            {this.props.favorites.loading ? (
+                                <ActivityIndicator
+                                    size="small"
+                                    color={styles.loading.color}
+                                />
+                            ) : (
+                                <Text style={styles.buttonText}>
+                                    Adicionar aos favoritos
+                                </Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
                 <View style={styles.footer}>
                     <TouchableOpacity onPress={this.navigateToFavorites}>
                         <Text style={styles.footerLink}>
-                            Meus Favoritos ({this.props.favoritesCount})
+                            Meus Favoritos ({this.props.favorites.data.length})
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -90,7 +108,7 @@ class Main extends Component {
 }
 
 const mapStateToProps = state => ({
-    favoritesCount: state.favorites.length
+    favorites: state.favorites
 });
 
 const mapDispatchToProps = dispatch =>
